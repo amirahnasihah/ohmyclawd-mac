@@ -135,7 +135,7 @@ The firmware updates itself via OTA — on boot it checks GitHub for a newer rel
 
 ## Credits
 
-- Pixel animations from [claudepix](https://claudepix.vercel.app/) by [Kevin Lynagh](https://github.com/lynaghk)
+- Pixel animations from [claudepix](https://claudepix.vercel.app/)
 
 ## How It Works
 
