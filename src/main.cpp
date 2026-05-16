@@ -155,6 +155,7 @@ void nextMode() { currentMode = (currentMode + 1) % 2; modeChanged = true; modeT
 void runSprite() {
   if (modeChanged) { tft.fillScreen(TFT_BLACK); spriteAnim = random(SPRITE_ANIM_COUNT); spriteFrame = 0; modeChanged = false;
     tft.setTextSize(2); tft.setTextColor(TFT_ORANGE, TFT_BLACK); tft.drawCentreString("OHMYCLAWD", 120, 5, 1);
+    tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK); tft.drawCentreString("v" VERSION, 120, 22, 1);
   }
   uint16_t offset = pgm_read_word(&sprite_anim_offset[spriteAnim]);
   uint8_t count = pgm_read_byte(&sprite_anim_count[spriteAnim]);

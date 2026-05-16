@@ -123,6 +123,16 @@ ohmyclawd-daemon-windows-amd64.exe
 
 Test with fake data: `./ohmyclawd-daemon --fake`
 
+### Updating
+
+Re-run the install script to update to the latest release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
+```
+
+The firmware updates itself via OTA — on boot it checks GitHub for a newer release and prompts to update.
+
 ## Credits
 
 - Pixel animations from [claudepix](https://claudepix.vercel.app/) by [Kevin Lynagh](https://github.com/lynaghk)
