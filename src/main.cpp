@@ -210,6 +210,13 @@ void runSprite() {
     tft.setTextDatum(TL_DATUM);
   } else {
     tft.fillRect(0, wordY, 240, 10, TFT_BLACK);
+    tft.setTextSize(1); tft.setTextColor(TFT_ORANGE, TFT_BLACK);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("waiting...", 124, wordY + 4, 1);
+    int textW = 10 * 6;
+    int blockX = 124 - textW / 2 - 10;
+    tft.fillRect(blockX, wordY + 1, 6, 6, TFT_ORANGE);
+    tft.setTextDatum(TL_DATUM);
   }
   // Usage bars
   int barY = yOff + SPRITE_H * cell + 10;
