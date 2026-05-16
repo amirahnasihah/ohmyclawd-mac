@@ -136,3 +136,15 @@ The firmware updates itself via OTA — on boot it checks GitHub for a newer rel
 ## Credits
 
 - Pixel animations from [claudepix](https://claudepix.vercel.app/) by [Kevin Lynagh](https://github.com/lynaghk)
+
+## How It Works
+
+The daemon reads your Claude Code OAuth credentials from `~/.claude/.credentials.json` (created automatically when you authenticate Claude Code). It uses the access token to make lightweight requests to the Anthropic API and reads the rate-limit response headers to determine your current session and weekly usage percentages. No messages are sent or read — it only inspects HTTP headers.
+
+## Disclaimer
+
+This project is unofficial and not affiliated with Anthropic. It relies on undocumented rate-limit headers from the Anthropic API which may change without notice. The daemon requires read-only access to your local Claude Code credentials file — it does not transmit, store, or expose your tokens over the network. Use at your own risk.
+
+## License
+
+[MIT](LICENSE)
