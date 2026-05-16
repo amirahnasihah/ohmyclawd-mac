@@ -10,4 +10,6 @@ type Usage struct {
 	ST string `json:"st"`  // "allowed" | "limited"
 	OK bool   `json:"ok"`  // last probe succeeded
 	Ts int64  `json:"ts"`  // unix seconds of last probe attempt
+	CS int    `json:"cs"`  // claude sessions (tmux panes)
+	CW int    `json:"cw"`  // claude sessions waiting for input
 }

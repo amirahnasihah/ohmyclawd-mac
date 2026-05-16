@@ -12,7 +12,7 @@ func newTestHandler(t *testing.T) (*Handler, *State, *Metrics) {
 	t.Helper()
 	s := NewState()
 	m := NewMetrics()
-	return NewHandler(s, m, func() time.Time { return time.Unix(1747353660, 0) }), s, m
+	return NewHandler(s, m, nil, func() time.Time { return time.Unix(1747353660, 0) }), s, m
 }
 
 func TestUsageHandler200(t *testing.T) {
@@ -26,23 +26,6 @@ func TestUsageHandler200(t *testing.T) {
 	}
 	if !strings.Contains(rr.Body.String(), `"s":50`) {
 		t.Fatalf("body = %s", rr.Body.String())
-	}
-	if rr.Header().Get("ETag") == "" {
-		t.Fatal("missing ETag header")
-	}
-}
-
-func TestUsageHandler304(t *testing.T) {
-	h, s, _ := newTestHandler(t)
-	s.Store(&Usage{S: 50})
-	_, etag := s.Load()
-
-	req := httptest.NewRequest(http.MethodGet, "/usage", nil)
-	req.Header.Set("If-None-Match", etag)
-	rr := httptest.NewRecorder()
-	h.ServeHTTP(rr, req)
-	if rr.Code != http.StatusNotModified {
-		t.Fatalf("status = %d, want 304", rr.Code)
 	}
 }
 

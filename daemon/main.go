@@ -22,10 +22,13 @@ func main() {
 
 	state := NewState()
 	metrics := NewMetrics()
-	handler := NewHandler(state, metrics, time.Now)
+	tmux := NewTmuxWatcher()
+	handler := NewHandler(state, metrics, tmux, time.Now)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	go tmux.Run(ctx)
 
 	if *fakeMode {
 		go runFake(ctx, state)

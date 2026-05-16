@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync/atomic"
@@ -19,15 +20,16 @@ func (m *Metrics) IncFail()  { m.fail.Add(1) }
 type Handler struct {
 	state   *State
 	metrics *Metrics
+	tmux    *TmuxWatcher
 	now     func() time.Time
 	mux     *http.ServeMux
 }
 
-func NewHandler(s *State, m *Metrics, now func() time.Time) *Handler {
+func NewHandler(s *State, m *Metrics, tw *TmuxWatcher, now func() time.Time) *Handler {
 	if now == nil {
 		now = time.Now
 	}
-	h := &Handler{state: s, metrics: m, now: now, mux: http.NewServeMux()}
+	h := &Handler{state: s, metrics: m, tmux: tw, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("/usage", h.usage)
 	h.mux.HandleFunc("/healthz", h.healthz)
 	h.mux.HandleFunc("/metrics", h.prom)
@@ -37,14 +39,13 @@ func NewHandler(s *State, m *Metrics, now func() time.Time) *Handler {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { h.mux.ServeHTTP(w, r) }
 
 func (h *Handler) usage(w http.ResponseWriter, r *http.Request) {
-	body, etag := h.state.Body()
-	if etag != "" && r.Header.Get("If-None-Match") == etag {
-		w.Header().Set("ETag", etag)
-		w.WriteHeader(http.StatusNotModified)
-		return
+	u, _ := h.state.Load()
+	if h.tmux != nil {
+		u.CS = h.tmux.Sessions()
+		u.CW = h.tmux.Waiting()
 	}
+	body, _ := json.Marshal(u)
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("ETag", etag)
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write(body)
 }

@@ -12,7 +12,7 @@ func TestUsageJSONRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	const want = `{"s":45,"sr":120,"w":28,"wr":7200,"st":"allowed","ok":true,"ts":1747353600}`
+	const want = `{"s":45,"sr":120,"w":28,"wr":7200,"st":"allowed","ok":true,"ts":1747353600,"cs":0,"cw":0}`
 	if string(b) != want {
 		t.Fatalf("got %s want %s", b, want)
 	}
