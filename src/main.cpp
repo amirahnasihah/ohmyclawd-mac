@@ -1,10 +1,9 @@
 #include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
 #include <TFT_eSPI.h>
 #include <XPT2046_Touchscreen.h>
 #include <WiFiManager.h>
 #include "time.h"
+#include "sprite_frames.h"
 
 // --- CYD PIN CONFIGURATION ---
 #define XPT2046_IRQ  36
@@ -13,11 +12,6 @@
 #define XPT2046_CLK  25
 #define XPT2046_CS   33
 #define BACKLIGHT_PIN 21 
-
-const char* ssid     = "";
-const char* password = "";
-String LAT = "41.03"; 
-String LON = "21.33";
 
 TFT_eSPI tft = TFT_eSPI();
 SPIClass touchSPI = SPIClass(VSPI);
@@ -29,34 +23,13 @@ unsigned long modeTimer = 0;
 const unsigned long interval = 60000; 
 bool modeChanged = true;
 
-float cTemp = 0, cHum = 0, cWind = 0;
-unsigned long lastDataFetch = 0; 
-unsigned long lastCryptoFetch = 0;
-
-// Game of Life
-#define GRID_W 48
-#define GRID_H 60
-uint8_t grid[GRID_W][GRID_H], nextGrid[GRID_W][GRID_H];
-uint16_t hueShift = 0;
-int lastCellCount = 0;
-int sameCountTimer = 0;
-
-// Matrix
-#define MAX_STREAMS 14
-struct MatrixColumn { int x; float y; float speed; int length; char lastChar; };
-MatrixColumn rain[MAX_STREAMS];
-
-const char* ids[] = {"bitcoin", "ethereum", "binancecoin", "solana", "ripple", "cardano", "tron", "dogecoin", "shiba-inu"};
-const char* symbols[] = {"BTC", "ETH", "BNB", "SOL", "XRP", "ADA", "TRX", "DGE", "SHIB"};
+uint8_t spriteFrame = 0;
+uint8_t spriteAnim = 0;
+unsigned long lastSpriteFrame = 0;
 
 void nextMode();
-void updateWeather();
-void runCrypto();
-void runWeather();
+void runSprite();
 void runClock();
-void runMatrix();
-void runLife();
-void spawnLife();
 
 void setup() {
   tft.init();
@@ -70,14 +43,14 @@ void setup() {
   tft.setTextColor(0x07FF);
   tft.setTextSize(2); tft.drawCentreString("STARTING WIFI...", 120, 140, 1);
   tft.drawCentreString("Connect to AP:", 120, 165, 1);
-  tft.setTextColor(0xFFE0);
-  tft.setTextSize(3); tft.drawCentreString("CYD-Cyberdeck", 120, 200, 1);
+  tft.setTextColor(TFT_ORANGE);
+  tft.setTextSize(3); tft.drawCentreString("Clawdeck", 120, 200, 1);
   tft.setTextColor(0x07FF);
   tft.setTextSize(1); tft.drawCentreString("then open 192.168.4.1", 120, 240, 1);
 
   WiFiManager wm;
   wm.setConfigPortalTimeout(300);
-  if (!wm.autoConnect("CYD-Cyberdeck")) {
+  if (!wm.autoConnect("Clawdeck")) {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_RED);
     tft.setTextSize(3); tft.drawCentreString("WIFI FAILED", 120, 150, 1);
@@ -97,90 +70,32 @@ void loop() {
   if (ts.touched()) { isAutoCycle = false; nextMode(); delay(400); }
   if (isAutoCycle && (millis() - modeTimer > interval)) nextMode();
 
-  if (millis() - lastDataFetch > 60000 || lastDataFetch == 0) {
-    updateWeather(); lastDataFetch = millis();
-  }
-
-  if (currentMode == 2 && (millis() - lastCryptoFetch > 60000)) modeChanged = true; 
-
   switch (currentMode) {
     case 0: runClock(); break;
-    case 1: runWeather(); break;
-    case 2: runCrypto(); break;
-    case 3: runMatrix(); break;
-    case 4: runLife(); break;
+    case 1: runSprite(); break;
   }
 }
 
-void nextMode() { currentMode = (currentMode + 1) % 5; modeChanged = true; modeTimer = millis(); tft.fillScreen(TFT_BLACK); }
+void nextMode() { currentMode = (currentMode + 1) % 2; modeChanged = true; modeTimer = millis(); tft.fillScreen(TFT_BLACK); }
 
-void updateWeather() {
-  HTTPClient http;
-  http.begin("https://api.open-meteo.com/v1/forecast?latitude="+LAT+"&longitude="+LON+"&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto");
-  if (http.GET() == 200) {
-    JsonDocument doc; deserializeJson(doc, http.getString());
-    cTemp = doc["current"]["temperature_2m"]; cHum = doc["current"]["relative_humidity_2m"]; cWind = doc["current"]["wind_speed_10m"];
-  }
-  http.end();
-}
-
-void runCrypto() {
-  if (!modeChanged) return;
-  HTTPClient http;
-  http.begin("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,ripple,cardano,tron,dogecoin,shiba-inu&vs_currencies=usd&include_24hr_change=true");
-  if (http.GET() == 200) {
-    DynamicJsonDocument doc(4096); deserializeJson(doc, http.getString());
-    tft.fillScreen(TFT_BLACK); tft.setTextDatum(TL_DATUM);
-    tft.setTextSize(2); tft.setTextColor(0xFFE0); tft.drawString("CRYPTO TERMINAL", 10, 5, 1);
-    tft.drawFastHLine(0, 25, 240, 0x07FF);
-    int yPos = 32;
-    for (int i = 0; i < 9; i++) {
-      float price = doc[ids[i]]["usd"]; float change = doc[ids[i]]["usd_24h_change"];
-      tft.setTextSize(2); tft.setTextColor(0xFFFF); tft.drawString(symbols[i], 5, yPos, 1);
-      tft.setTextColor(0x07FF);
-      String pStr;
-      if (String(symbols[i]) == "SHIB") pStr = String(price, 9);
-      else if (String(symbols[i]) == "DGE") pStr = String(price, 4);
-      else if (String(symbols[i]) == "TRX" || String(symbols[i]) == "ADA" || String(symbols[i]) == "XRP") pStr = String(price, 4);
-      else pStr = (price >= 1000) ? String((int)price) : String(price, 2);
-      tft.drawString(pStr, 55, yPos, 1);
-      tft.setTextColor((change >= 0) ? 0x07E0 : 0xF800);
-      tft.drawRightString(String(change, 1) + "%", 235, yPos, 1);
-      yPos += 31; tft.drawFastHLine(5, yPos - 3, 230, 0x2104);
-    }
-    lastCryptoFetch = millis(); modeChanged = false;
-  }
-  http.end();
-}
-
-void runWeather() {
-  if (modeChanged) {
-    tft.fillScreen(TFT_BLACK); tft.drawRect(0, 0, 240, 25, 0x07FF);
-    tft.setTextSize(1); tft.setTextColor(0xFFFF); tft.drawCentreString("CYBER WEATHER HUD", 120, 8, 1);
-    tft.drawRoundRect(5, 30, 112, 140, 8, 0xF81F); tft.drawRoundRect(122, 30, 112, 140, 8, 0xFFE0);
-    tft.drawRoundRect(5, 175, 112, 140, 8, 0x07FF); tft.drawRoundRect(122, 175, 112, 140, 8, 0x07E0);
-    tft.setTextSize(2); tft.setTextColor(0xF81F); tft.drawCentreString("TIME", 61, 35, 1);
-    tft.setTextColor(0xFFE0); tft.drawCentreString("TEMP", 178, 35, 1);
-    tft.setTextColor(0x07FF); tft.drawCentreString("HUMIDITY", 61, 180, 1);
-    tft.setTextColor(0x07E0); tft.drawCentreString("WIND", 178, 180, 1);
-    tft.setTextSize(3); tft.setTextColor(0xFFE0); tft.drawCentreString(String(cTemp, 1)+"C", 178, 90, 1);
-    tft.setTextColor(0x07FF); tft.drawCentreString(String((int)cHum)+"%", 61, 240, 1);
-    tft.setTextColor(0x07E0); tft.drawCentreString(String(cWind, 1), 178, 240, 1);
-    tft.setTextSize(1); tft.drawCentreString("km/h", 178, 290, 1);
-    modeChanged = false;
-  }
-  struct tm ti; 
-  if(getLocalTime(&ti)) {
-    static int lsec = -1;
-    if (ti.tm_sec != lsec) {
-      tft.fillRect(10, 75, 102, 60, TFT_BLACK); 
-      char tS[6]; strftime(tS, 6, "%H:%M", &ti);
-      tft.setTextSize(3); tft.setTextColor(0xF81F); tft.drawCentreString(tS, 61, 100, 1);
-      int32_t rssi = WiFi.RSSI(); int bars = (rssi > -50) ? 4 : (rssi > -70) ? 3 : (rssi > -85) ? 2 : 1;
-      for (int i = 0; i < 4; i++) { tft.fillRect(210 + (i * 6), 18 - (i * 3), 4, (i * 3) + 3, (i < bars) ? 0x07E0 : 0x3186); }
-      lsec = ti.tm_sec;
+void runSprite() {
+  if (modeChanged) { tft.fillScreen(TFT_BLACK); spriteAnim = random(SPRITE_ANIM_COUNT); spriteFrame = 0; modeChanged = false; }
+  uint16_t offset = pgm_read_word(&sprite_anim_offset[spriteAnim]);
+  uint8_t count = pgm_read_byte(&sprite_anim_count[spriteAnim]);
+  if (millis() - lastSpriteFrame < pgm_read_word(&sprite_hold[offset + spriteFrame])) return;
+  lastSpriteFrame = millis();
+  static const uint16_t colors[] = {TFT_BLACK, TFT_ORANGE, TFT_BLACK, TFT_CYAN, TFT_DARKGREY, TFT_WHITE};
+  const int cell = 8;
+  const int px = 7;
+  const int xOff = (240 - SPRITE_W * cell) / 2;
+  const int yOff = (320 - SPRITE_H * cell) / 2;
+  for (int y = 0; y < SPRITE_H; y++) {
+    for (int x = 0; x < SPRITE_W; x++) {
+      uint8_t v = pgm_read_byte(&sprite_data[offset + spriteFrame][y * SPRITE_W + x]);
+      tft.fillRect(xOff + x * cell, yOff + y * cell, px, px, colors[v]);
     }
   }
+  spriteFrame = (spriteFrame + 1) % count;
 }
 
 void runClock() {
@@ -211,63 +126,4 @@ void runClock() {
     for (int i = 0; i < 4; i++) { tft.fillRect(100 + (i * 8), 305 - ((i + 1) * 5), 6, (i + 1) * 5, (i < bars) ? 0x07E0 : 0x3186); }
     lsec = ti.tm_sec;
   }
-}
-
-void runMatrix() {
-  if (modeChanged) {
-    for (int i = 0; i < MAX_STREAMS; i++) {
-      rain[i].x = i * 17 + 2; rain[i].y = random(-400, 0);
-      rain[i].speed = random(5, 15); rain[i].length = random(15, 40);
-    }
-    modeChanged = false;
-  }
-  for (int i = 0; i < MAX_STREAMS; i++) {
-    tft.setTextSize(2); tft.setTextColor(TFT_WHITE, TFT_BLACK); char hC = random(33, 126);
-    tft.drawChar(hC, rain[i].x, (int)rain[i].y, 1);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK); tft.drawChar(rain[i].lastChar, rain[i].x, (int)rain[i].y - 20, 1);
-    tft.fillRect(rain[i].x, (int)rain[i].y - (rain[i].length * 20), 20, 20, TFT_BLACK);
-    rain[i].lastChar = hC; rain[i].y += rain[i].speed;
-    if (rain[i].y > 320 + (rain[i].length * 20)) rain[i].y = -20;
-  }
-  delay(25); 
-}
-
-void spawnLife() {
-  tft.fillScreen(TFT_BLACK); tft.setTextSize(2); tft.setTextColor(0x7BEF); tft.drawCentreString("GENERATING SEED...", 120, 160, 1);
-  delay(800); tft.fillScreen(TFT_BLACK);
-  for (int x = 0; x < GRID_W; x++) for (int y = 0; y < GRID_H; y++) grid[x][y] = (random(100) < 20) ? 1 : 0;
-  sameCountTimer = 0;
-}
-
-void runLife() {
-  if (modeChanged) { spawnLife(); modeChanged = false; }
-  int totalAlive = 0;
-  for (int x = 0; x < GRID_W; x++) {
-    for (int y = 0; y < GRID_H; y++) {
-      int n = 0;
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) {
-        if (i == 0 && j == 0) continue;
-        if (grid[(x+i+GRID_W)%GRID_W][(y+j+GRID_H)%GRID_H] > 0) n++;
-      }
-      if (grid[x][y] > 0) nextGrid[x][y] = (n == 2 || n == 3) ? 1 : 0;
-      else nextGrid[x][y] = (n == 3) ? 1 : 0;
-      if (nextGrid[x][y] > 0) totalAlive++;
-    }
-  }
-  for (int x = 0; x < GRID_W; x++) {
-    for (int y = 0; y < GRID_H; y++) {
-      if (grid[x][y] != nextGrid[x][y]) {
-        if (nextGrid[x][y] > 0) {
-          uint8_t r = (x * 4 + hueShift) % 255; uint8_t g = (y * 2 + hueShift / 2) % 255;
-          tft.fillRect(x * 5, y * 5, 4, 4, tft.color565(r, g, 255 - r));
-        } else tft.fillRect(x * 5, y * 5, 4, 4, TFT_BLACK);
-      }
-      grid[x][y] = nextGrid[x][y];
-    }
-  }
-  tft.fillRect(180, 5, 55, 25, TFT_BLACK); tft.setTextSize(2); tft.setTextColor(0x07FF); tft.drawRightString(String(totalAlive), 235, 10, 1);
-  if (totalAlive == lastCellCount) sameCountTimer++; else sameCountTimer = 0;
-  lastCellCount = totalAlive; hueShift += 3;
-  if (totalAlive < 5 || sameCountTimer > 120) { delay(1500); spawnLife(); }
-  delay(100); 
 }
