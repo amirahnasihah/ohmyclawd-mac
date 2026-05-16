@@ -26,6 +26,18 @@ Displays real-time Claude Code session and weekly usage with animated pixel spri
 
 Tap the touchscreen to switch modes. Hold for 5 seconds to reset WiFi and daemon URL settings.
 
+## Sprite States
+
+The animated sprite changes based on your Claude Code status:
+
+| State | Sprite | Trigger |
+|---|---|---|
+| Needs input | expression-surprise | Claude session idle >30s in tmux |
+| Rate limited | expression-sleep | Session usage ≥ 80% |
+| Heavy usage | work-think | Session usage 50–79% |
+| Moderate usage | work-coding | Session usage 25–49% |
+| Light usage | dance-bounce/sway | Session usage < 25% |
+
 ## Hardware
 
 - **Board:** ESP32-2432S028R (CYD 2.8")
