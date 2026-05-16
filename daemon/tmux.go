@@ -105,7 +105,13 @@ func (tw *TmuxWatcher) paneHash(paneID string) string {
 	if err != nil {
 		return ""
 	}
-	// Hash last 10 lines
+	// Check if Claude is actively working (has pending tasks)
+	content := string(out)
+	if strings.Contains(content, "pending") {
+		// Return unique hash each time so it never looks idle
+		return fmt.Sprintf("active-%d", time.Now().UnixNano())
+	}
+	// Hash last 10 lines for idle detection
 	lines := bytes.Split(out, []byte("\n"))
 	start := len(lines) - 10
 	if start < 0 {
