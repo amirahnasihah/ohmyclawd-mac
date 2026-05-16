@@ -330,13 +330,25 @@ void checkOTA() {
   // Download and flash
   tft.fillScreen(TFT_BLACK);
   tft.setTextSize(2); tft.setTextColor(TFT_ORANGE, TFT_BLACK);
-  tft.drawCentreString("UPDATING", 120, 40, 1);
+  tft.drawCentreString("UPDATING", 120, 5, 1);
   tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
-  tft.drawCentreString("do not power off", 120, 65, 1);
+  tft.drawCentreString("do not power off", 120, 25, 1);
+
+  // Draw sleep sprite centered
+  const int cell = 8, px = 7;
+  const int xOff = (240 - SPRITE_W * cell) / 2;
+  const int yOff = 45;
+  uint16_t sleepOffset = pgm_read_word(&sprite_anim_offset[2]); // expression-sleep
+  static const uint16_t colors[] = {TFT_BLACK, TFT_ORANGE, TFT_BLACK, TFT_CYAN, TFT_DARKGREY, TFT_WHITE};
+  for (int y = 0; y < SPRITE_H; y++)
+    for (int x = 0; x < SPRITE_W; x++) {
+      uint8_t v = pgm_read_byte(&sprite_data[sleepOffset][y * SPRITE_W + x]);
+      tft.fillRect(xOff + x * cell, yOff + y * cell, px, px, colors[v]);
+    }
 
   // Progress bar params
   int barX = (240 - BANNER_W * 8) / 2;
-  int barY = 150;
+  int barY = yOff + SPRITE_H * cell + 15;
   int numCells = BANNER_W;
 
   http.begin(client, assetUrl);
@@ -351,6 +363,9 @@ void checkOTA() {
 
   uint8_t buf[1024];
   int written = 0;
+  uint8_t sleepFrame = 0;
+  uint8_t sleepCount = pgm_read_byte(&sprite_anim_count[2]);
+  unsigned long lastFrame = 0;
   while (written < contentLen) {
     int avail = stream->available();
     if (avail) {
@@ -358,9 +373,25 @@ void checkOTA() {
       Update.write(buf, read);
       written += read;
       // Update progress bar
-      int filled = (written * numCells) / contentLen;
+      int pct = (written * 100) / contentLen;
+      int filled = (pct * numCells) / 100;
       for (int i = 0; i < numCells; i++)
         tft.fillRect(barX + i * 8, barY, 7, 7, (i <= filled) ? TFT_ORANGE : TFT_DARKGREY);
+      // Percentage text
+      tft.fillRect(barX + numCells * 8 + 4, barY, 30, 8, TFT_BLACK);
+      tft.setTextSize(1); tft.setTextColor(TFT_ORANGE, TFT_BLACK);
+      tft.drawString(String(pct) + "%", barX + numCells * 8 + 4, barY, 1);
+    }
+    // Animate sleep sprite
+    if (millis() - lastFrame > 150) {
+      lastFrame = millis();
+      uint16_t fOff = sleepOffset + sleepFrame;
+      for (int y = 0; y < SPRITE_H; y++)
+        for (int x = 0; x < SPRITE_W; x++) {
+          uint8_t v = pgm_read_byte(&sprite_data[fOff][y * SPRITE_W + x]);
+          tft.fillRect(xOff + x * cell, yOff + y * cell, px, px, colors[v]);
+        }
+      sleepFrame = (sleepFrame + 1) % sleepCount;
     }
     delay(1);
   }
