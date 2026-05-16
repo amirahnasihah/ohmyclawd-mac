@@ -14,7 +14,7 @@
 
 Claude Code usage monitor on the ESP32-2432S028R (CYD 2.8") with pixel art animations.
 
-![ohmyclawd1](ohmyclawd1.jpeg) | ![ohmyclawd2](ohmyclawd2.jpeg) | ![ohmyclawd3](ohmyclawd3.mp4)
+![ohmyclawd1](ohmyclawd1.jpeg) | ![ohmyclawd2](ohmyclawd2.jpeg) | <video src="ohmyclawd3.mp4" autoplay loop muted playsinline width="200"></video>
 :---:|:---:|:---:
 
 Displays real-time Claude Code session and weekly usage with animated pixel sprites and a digital clock.
