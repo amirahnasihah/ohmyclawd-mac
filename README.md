@@ -28,7 +28,7 @@ Tap the touchscreen to switch modes. Hold for 5 seconds to reset WiFi and daemon
 
 ## Sprite States
 
-The animated sprite changes based on your Claude Code status:
+The animated sprite changes based on your Claude Code status (requires Claude Code sessions running in tmux):
 
 | State | Sprite | Trigger |
 |---|---|---|
