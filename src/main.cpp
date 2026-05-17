@@ -376,17 +376,40 @@ void checkOTA() {
   // Show update prompt
   tft.fillScreen(TFT_BLACK);
   tft.setTextSize(2); tft.setTextColor(TFT_ORANGE, TFT_BLACK);
-  tft.drawCentreString("UPDATE", 120, 40, 1);
+  tft.drawCentreString("UPDATE", 120, 20, 1);
   tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
-  tft.drawCentreString("v" + current + " -> v" + tag, 120, 70, 1);
+  tft.drawCentreString("v" + current + " -> v" + tag, 120, 45, 1);
   // YES button
-  tft.fillRect(30, 120, 80, 50, TFT_ORANGE);
+  tft.fillRect(30, 70, 80, 40, TFT_ORANGE);
   tft.setTextSize(2); tft.setTextColor(TFT_BLACK);
-  tft.drawCentreString("YES", 70, 135, 1);
+  tft.drawCentreString("YES", 70, 80, 1);
   // NO button
-  tft.fillRect(130, 120, 80, 50, TFT_DARKGREY);
+  tft.fillRect(130, 70, 80, 40, TFT_DARKGREY);
   tft.setTextColor(TFT_WHITE);
-  tft.drawCentreString("NO", 170, 135, 1);
+  tft.drawCentreString("NO", 170, 80, 1);
+  // Release notes
+  String notes = doc["body"] | "";
+  if (notes.length() > 0) {
+    tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
+    tft.drawCentreString("What's new:", 120, 125, 1);
+    tft.setTextColor(TFT_ORANGE, TFT_BLACK);
+    int noteY = 140;
+    int lineStart = 0;
+    int linesShown = 0;
+    for (int i = 0; i <= (int)notes.length() && linesShown < 6; i++) {
+      if (i == (int)notes.length() || notes[i] == '\n') {
+        String line = notes.substring(lineStart, i);
+        line.trim();
+        if (line.length() > 0) {
+          if (line.length() > 38) line = line.substring(0, 38) + "..";
+          tft.drawString(line, 5, noteY, 1);
+          noteY += 12;
+          linesShown++;
+        }
+        lineStart = i + 1;
+      }
+    }
+  }
 
   // Wait for touch
   unsigned long timeout = millis() + 15000;
@@ -397,7 +420,7 @@ void checkOTA() {
       // Map touch coordinates (XPT2046 raw: ~300-3900)
       int tx = map(p.x, 300, 3900, 0, 240);
       int ty = map(p.y, 300, 3900, 0, 320);
-      if (ty >= 120 && ty <= 170) {
+      if (ty >= 70 && ty <= 110) {
         if (tx >= 30 && tx <= 110) { accepted = true; break; }
         if (tx >= 130 && tx <= 210) { return; }
       }
