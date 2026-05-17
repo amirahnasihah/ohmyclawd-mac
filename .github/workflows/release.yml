@@ -30,9 +30,9 @@ jobs:
       run:
         working-directory: daemon
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: daemon/go.mod
           cache: false
@@ -51,7 +51,7 @@ jobs:
             -ldflags="-s -w -X main.version=${GITHUB_REF_NAME}" \
             -o ../ohmyclawd-daemon-${{ matrix.suffix }} .
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ohmyclawd-daemon-${{ matrix.suffix }}
           path: ohmyclawd-daemon-${{ matrix.suffix }}
@@ -59,14 +59,14 @@ jobs:
   firmware:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: ~/.platformio
           key: pio-${{ hashFiles('platformio.ini') }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -80,7 +80,7 @@ jobs:
           pio run -e cyd
           cp .pio/build/cyd/firmware.bin ohmyclawd-firmware.bin
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ohmyclawd-firmware
           path: ohmyclawd-firmware.bin
@@ -89,9 +89,9 @@ jobs:
     needs: [daemon-binary, firmware]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
 

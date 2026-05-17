@@ -80,9 +80,10 @@ void setup() {
   touchSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
   ts.begin(touchSPI); ts.setRotation(0);
 
-  // Load saved daemon URL
+  // Load saved settings
   prefs.begin("ohmyclawd", false);
   daemonUrl = prefs.getString("url", "http://ohmyclawd.local:8787");
+  String tzStr = prefs.getString("tz", "UTC-8");
   prefs.end();
 
   tft.fillScreen(TFT_BLACK);
@@ -107,7 +108,9 @@ void setup() {
 
   WiFiManager wm;
   WiFiManagerParameter daemonParam("daemon_url", "Daemon URL", daemonUrl.c_str(), 80);
+  WiFiManagerParameter tzParam("timezone", "Timezone (POSIX)", tzStr.c_str(), 40);
   wm.addParameter(&daemonParam);
+  wm.addParameter(&tzParam);
   wm.setConfigPortalTimeout(300);
   if (!wm.autoConnect("OhMyClawd")) {
     tft.fillScreen(TFT_BLACK);
@@ -118,18 +121,23 @@ void setup() {
     ESP.restart();
   }
 
-  // Save daemon URL if changed
+  // Save settings if changed
   String newUrl = String(daemonParam.getValue());
-  if (newUrl.length() > 0 && newUrl != daemonUrl) {
-    daemonUrl = newUrl;
+  String newTz = String(tzParam.getValue());
+  if ((newUrl.length() > 0 && newUrl != daemonUrl) || (newTz.length() > 0 && newTz != tzStr)) {
+    if (newUrl.length() > 0) daemonUrl = newUrl;
+    if (newTz.length() > 0) tzStr = newTz;
     prefs.begin("ohmyclawd", false);
     prefs.putString("url", daemonUrl);
+    prefs.putString("tz", tzStr);
     prefs.end();
   }
   
   tft.fillScreen(TFT_ORANGE); tft.setTextColor(TFT_BLACK);
   tft.setTextSize(3); tft.drawCentreString("CONNECTED!", 120, 160, 1);
-  configTime(3600, 3600, "pool.ntp.org");
+  configTime(0, 0, "pool.ntp.org");
+  setenv("TZ", tzStr.c_str(), 1);
+  tzset();
   delay(1000);
   checkOTA();
   tft.fillScreen(TFT_BLACK);
