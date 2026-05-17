@@ -19,12 +19,86 @@ Claude Code usage monitor on the ESP32-2432S028R (CYD 2.8") with pixel art anima
 
 Displays real-time Claude Code session and weekly usage with animated pixel sprites and a digital clock.
 
-## Modes
+## Features
 
-1. **Usage + Sprite** (default) — animated Claude pixel creature with session/weekly usage grid bars and reset timers
-2. **Clock** — pixel-art "OH MY CLAWD" banner, digital clock, date, and orange grid second-progress bar
+- **Real-time usage bars** — session and weekly utilization at a glance
+- **13 animated pixel sprites** — changes based on Claude Code activity state
+- **Tmux session detection** — knows when Claude is waiting for your input
+- **OTA firmware updates** — checks GitHub releases on boot, tap to update
+- **Configurable via captive portal** — no code changes needed for WiFi/daemon setup
+- **Pixel clock mode** — retro digital clock with second-progress bar
 
-Tap the touchscreen to switch modes. Hold for 5 seconds to reset WiFi and daemon URL settings.
+## Hardware
+
+- **Board:** ESP32-2432S028R (CYD 2.8")
+- **Display:** 2.8" ILI9341 320×240 TFT
+- **Touch:** XPT2046 resistive touchscreen
+- **Connectivity:** WiFi (2.4 GHz)
+
+## Quick Start
+
+### 1. Install the daemon
+
+The daemon runs on your machine (where Claude Code runs), polls the Anthropic API for rate-limit headers, and serves usage data over HTTP.
+
+**Linux (one-liner):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
+```
+
+This downloads the latest binary, installs to `/usr/local/bin`, and sets up a systemd service.
+
+**Other platforms** — download from [Releases](https://github.com/opariffazman/ohmyclawd/releases):
+
+| Platform | Binary |
+|----------|--------|
+| Linux x64 | `ohmyclawd-daemon-linux-amd64` |
+| macOS x64 | `ohmyclawd-daemon-darwin-amd64` |
+| macOS ARM | `ohmyclawd-daemon-darwin-arm64` |
+| Windows x64 | `ohmyclawd-daemon-windows-amd64.exe` |
+
+```bash
+# Linux/macOS
+chmod +x ohmyclawd-daemon-*
+./ohmyclawd-daemon-linux-amd64
+
+# Windows
+ohmyclawd-daemon-windows-amd64.exe
+```
+
+### 2. Flash the firmware
+
+Requires [PlatformIO](https://platformio.org/).
+
+```bash
+git clone https://github.com/opariffazman/ohmyclawd.git
+cd ohmyclawd
+pio run -e cyd -t upload
+```
+
+Or download `ohmyclawd-firmware.bin` from [Releases](https://github.com/opariffazman/ohmyclawd/releases) and flash with esptool:
+
+```bash
+esptool.py write_flash 0x10000 ohmyclawd-firmware.bin
+```
+
+### 3. Configure the CYD
+
+On first boot, the CYD creates a WiFi access point:
+
+1. Connect to **`OhMyClawd`** on your phone/laptop
+2. A captive portal opens (or browse to `192.168.4.1`)
+3. Enter your **WiFi SSID** and **password**
+4. Set the **Daemon URL** (default: `http://ohmyclawd.local:8787`)
+5. Set your **Timezone** (default: `UTC-8`, see [POSIX TZ format](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html))
+6. Save — the CYD reboots and connects
+
+Settings persist across reboots. Hold touch for 5 seconds to reset and reconfigure.
+
+### 4. Done!
+
+The CYD shows your Claude Code usage. Tap to switch between sprite and clock modes.
 
 ## Sprite States
 
@@ -38,35 +112,27 @@ The animated sprite changes based on your Claude Code status (requires Claude Co
 | Moderate usage | work-coding, dance-djmix | Session usage 25–49% |
 | Light usage | dance-bounce, dance-sway, bounce-dj, sway-dj, idle-blink | Session usage < 25% |
 
-## Hardware
+## Updating
 
-- **Board:** ESP32-2432S028R (CYD 2.8")
-- **Display:** 2.8" ILI9341 320×240 TFT
-- **Touch:** XPT2046 resistive touchscreen
-- **Connectivity:** WiFi (2.4 GHz)
+**Firmware:** updates itself via OTA — on boot it checks GitHub for a newer release and prompts to update.
 
-## Build & Flash
-
-Requires [PlatformIO](https://platformio.org/).
+**Daemon:** re-run the install script:
 
 ```bash
-pio run -e cyd -t upload
-pio device monitor
+curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
 ```
 
-## Setup
+## Daemon
 
-On first boot (or after a 5-second touch reset), the CYD creates an access point:
+### Environment Variables
 
-1. Connect to WiFi network **`OhMyClawd`**
-2. A captive portal opens (or browse to `192.168.4.1`)
-3. Enter your WiFi SSID, password, and daemon URL
-4. Default daemon URL: `http://ohmyclawd.local:8787`
-5. The CYD reboots and connects to your network
+- `OHMYCLAWD_LISTEN` — listen address (default `:8787`)
+- `OHMYCLAWD_PROBE_INTERVAL` — probe interval (default `60s`)
+- `OHMYCLAWD_CREDS_PATH` — path to Claude credentials (default `~/.claude/.credentials.json`)
 
-Settings persist across reboots.
+Test with fake data: `./ohmyclawd-daemon --fake`
 
-## Display Color Fix
+### Display Color Fix
 
 Some CYD units have inverted panels. Toggle in `setup()`:
 
@@ -95,63 +161,13 @@ tft.invertDisplay(true);   // try false if colors are inverted
     └── sprite_frames.h   # Generated animation frame data (13 presets)
 ```
 
-## Daemon
+## How It Works
 
-The daemon runs on your machine, polls the Anthropic API for rate-limit headers, and serves usage data over HTTP.
-
-### Quick Install (Linux)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
-```
-
-This downloads the latest binary, installs it to `/usr/local/bin`, and sets up a systemd service running as your user.
-
-### Manual Install
-
-Download the binary for your platform from [Releases](https://github.com/opariffazman/ohmyclawd/releases):
-
-| Platform | Binary |
-|----------|--------|
-| Linux x64 | `ohmyclawd-daemon-linux-amd64` |
-| macOS x64 | `ohmyclawd-daemon-darwin-amd64` |
-| macOS ARM | `ohmyclawd-daemon-darwin-arm64` |
-| Windows x64 | `ohmyclawd-daemon-windows-amd64.exe` |
-
-```bash
-# Linux/macOS
-chmod +x ohmyclawd-daemon-*
-./ohmyclawd-daemon-linux-amd64
-
-# Windows
-ohmyclawd-daemon-windows-amd64.exe
-```
-
-### Environment Variables
-
-- `OHMYCLAWD_LISTEN` — listen address (default `:8787`)
-- `OHMYCLAWD_PROBE_INTERVAL` — probe interval (default `60s`)
-- `OHMYCLAWD_CREDS_PATH` — path to Claude credentials (default `~/.claude/.credentials.json`)
-
-Test with fake data: `./ohmyclawd-daemon --fake`
-
-### Updating
-
-Re-run the install script to update to the latest release:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
-```
-
-The firmware updates itself via OTA — on boot it checks GitHub for a newer release and prompts to update.
+The daemon reads your Claude Code OAuth credentials from `~/.claude/.credentials.json` (created automatically when you authenticate Claude Code). It uses the access token to make lightweight requests to the Anthropic API and reads the rate-limit response headers to determine your current session and weekly usage percentages. No messages are sent or read — it only inspects HTTP headers.
 
 ## Credits
 
 - Pixel animations from [claudepix](https://claudepix.vercel.app/)
-
-## How It Works
-
-The daemon reads your Claude Code OAuth credentials from `~/.claude/.credentials.json` (created automatically when you authenticate Claude Code). It uses the access token to make lightweight requests to the Anthropic API and reads the rate-limit response headers to determine your current session and weekly usage percentages. No messages are sent or read — it only inspects HTTP headers.
 
 ## Disclaimer
 
