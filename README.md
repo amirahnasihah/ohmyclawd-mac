@@ -32,11 +32,11 @@ The animated sprite changes based on your Claude Code status (requires Claude Co
 
 | State | Sprite | Trigger |
 |---|---|---|
-| Needs input | expression-surprise | Claude session idle >30s in tmux |
-| Rate limited | expression-sleep | Session usage ≥ 80% |
-| Heavy usage | work-think | Session usage 50–79% |
-| Moderate usage | work-coding | Session usage 25–49% |
-| Light usage | dance-bounce/sway | Session usage < 25% |
+| Needs input | expression-surprise, expression-wink | Claude session idle >30s in tmux |
+| Rate limited | expression-sleep, idle-breathe | Session usage ≥ 80% |
+| Heavy usage | work-think, idle-look-around | Session usage 50–79% |
+| Moderate usage | work-coding, dance-djmix | Session usage 25–49% |
+| Light usage | dance-bounce, dance-sway, bounce-dj, sway-dj, idle-blink | Session usage < 25% |
 
 ## Hardware
 

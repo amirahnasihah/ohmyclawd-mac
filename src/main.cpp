@@ -162,12 +162,22 @@ void nextMode() { currentMode = (currentMode + 1) % 2; modeChanged = true; modeT
 
 void runSprite() {
   if (modeChanged) { tft.fillScreen(TFT_BLACK); spriteFrame = 0; modeChanged = false;
-    // Pick sprite based on status: waiting=surprise(3), limited=sleep(2), high=work-think(8), mid=work-coding(12), low=random dance
-    if (claudeWaiting > 0) spriteAnim = 3;        // expression-surprise (needs input!)
-    else if (usageSession >= 80) spriteAnim = 2;   // expression-sleep
-    else if (usageSession >= 50) spriteAnim = 8;   // work-think
-    else if (usageSession >= 25) spriteAnim = 12;  // work-coding
-    else spriteAnim = random(2);                   // dance-bounce(0) or dance-sway(1)
+    // Pick sprite based on status with variety
+    // Waiting: surprise(3), wink(4)
+    // Rate limited (>=80%): sleep(2), idle-breathe(6)
+    // Heavy (50-79%): work-think(8), idle-look-around(7)
+    // Moderate (25-49%): work-coding(12), dance-djmix(11)
+    // Light (<25%): dance-bounce(0), dance-sway(1), dance-bounce-dj(9), dance-sway-dj(10)
+    static const uint8_t waitPool[] = {3, 4};
+    static const uint8_t limitPool[] = {2, 6};
+    static const uint8_t heavyPool[] = {8, 7};
+    static const uint8_t modPool[] = {12, 11};
+    static const uint8_t lightPool[] = {0, 1, 9, 10, 5};
+    if (claudeWaiting > 0) spriteAnim = waitPool[random(2)];
+    else if (usageSession >= 80) spriteAnim = limitPool[random(2)];
+    else if (usageSession >= 50) spriteAnim = heavyPool[random(2)];
+    else if (usageSession >= 25) spriteAnim = modPool[random(2)];
+    else spriteAnim = lightPool[random(5)];
     tft.setTextSize(2); tft.setTextColor(TFT_ORANGE, TFT_BLACK); tft.drawCentreString("OHMYCLAWD", 120, 5, 1);
     tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK); tft.drawCentreString("v" VERSION, 120, 22, 1);
   }
@@ -268,11 +278,16 @@ void fetchUsage() {
     // Update sprite based on new status
     if (currentMode == 0) {
       uint8_t newAnim;
-      if (claudeWaiting > 0) newAnim = 3;
-      else if (usageSession >= 80) newAnim = 2;
-      else if (usageSession >= 50) newAnim = 8;
-      else if (usageSession >= 25) newAnim = 12;
-      else newAnim = spriteAnim < 2 ? spriteAnim : random(2);
+      static const uint8_t waitP[] = {3, 4};
+      static const uint8_t limitP[] = {2, 6};
+      static const uint8_t heavyP[] = {8, 7};
+      static const uint8_t modP[] = {12, 11};
+      static const uint8_t lightP[] = {0, 1, 9, 10, 5};
+      if (claudeWaiting > 0) newAnim = waitP[random(2)];
+      else if (usageSession >= 80) newAnim = limitP[random(2)];
+      else if (usageSession >= 50) newAnim = heavyP[random(2)];
+      else if (usageSession >= 25) newAnim = modP[random(2)];
+      else newAnim = lightP[random(5)];
       if (newAnim != spriteAnim) { spriteAnim = newAnim; spriteFrame = 0; }
     }
   }
