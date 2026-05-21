@@ -207,15 +207,30 @@ The animated sprite changes based on your Claude Code status (requires Claude Co
 
 ## Updating
 
-**Firmware:** updates itself via OTA — on boot it checks GitHub for a newer release and prompts to update.
+### Firmware (OTA)
 
-**Daemon (macOS):** re-run the install script:
+After the first USB flash, all future updates are over-the-air — no USB needed.
+
+**How to release a new firmware version:**
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+GitHub Actions automatically builds `ohmyclawd-firmware.bin` and creates a release. On next reboot, the ESP32 checks GitHub, detects the newer version, and prompts on screen to update. Tap to confirm — it downloads and flashes itself via WiFi.
+
+> First flash must always be via USB (`flash-omc` or `pio run -e cyd -t upload`). OTA only works after the correct firmware (with your fork's OTA URL) is already on the device.
+
+### Daemon (macOS)
+
+Re-run the install script:
 
 ```bash
 cd daemon && ./install.sh
 ```
 
-**Daemon (Linux):**
+### Daemon (Linux)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/amirahnasihah/ohmyclawd-mac/main/install.sh | sudo bash
