@@ -35,70 +35,161 @@ Displays real-time Claude Code session and weekly usage with animated pixel spri
 - **Touch:** XPT2046 resistive touchscreen
 - **Connectivity:** WiFi (2.4 GHz)
 
-## Quick Start
+---
 
-### 1. Install the daemon
+## macOS Setup (A to Z)
 
-The daemon runs on your machine (where Claude Code runs), polls the Anthropic API for rate-limit headers, and serves usage data over HTTP.
+### Prerequisites
 
-**Linux (one-liner):**
+- macOS with [Homebrew](https://brew.sh) installed
+- [PlatformIO](https://platformio.org/) for flashing firmware (`brew install platformio`)
+- Claude Code CLI installed (`claude --version` to verify)
+- Claude Pro / Max subscription (required for rate-limit headers)
+
+---
+
+### Step 1 — Generate an OAuth token
+
+On macOS, Claude Code stores credentials in the Keychain (no `.credentials.json` file). The daemon needs a long-lived token instead.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
+claude setup-token
+```
+
+Copy the printed token (`sk-ant-oat01-...`). **You won't see it again** — save it in a password manager.
+
+> This token is tied to your Claude Pro subscription, not billed as API usage.
+
+**Important:** do not set `CLAUDE_CODE_OAUTH_TOKEN` in your shell profile — it will override your normal Claude Code login and break `/usage` inside Claude Code. Only pass it to the daemon process:
+
+```bash
+# check if accidentally set
+echo $CLAUDE_CODE_OAUTH_TOKEN
+
+# if set, unset it
+unset CLAUDE_CODE_OAUTH_TOKEN
+```
+
+---
+
+### Step 2 — Flash the firmware
+
+Connect the CYD board via USB, then find the port:
+
+```bash
+ls /dev/cu.usbserial-*
+```
+
+Update `upload_port` in `platformio.ini` to match, then flash:
+
+```bash
+pio run -e cyd -t upload
+```
+
+---
+
+### Step 3 — Set a static IP on your Mac
+
+The ESP32 will poll your Mac's IP. If the IP changes, it loses connection.
+
+**System Settings → Network → Wi-Fi → Details → TCP/IP → Configure IPv4 → Manual**
+
+- IP Address: `192.168.1.200` (or any unused address in your range)
+- Subnet Mask: `255.255.255.0`
+- Router: your router's IP (usually `192.168.1.1`)
+
+Verify:
+
+```bash
+ipconfig getifaddr en0
+# should return your chosen static IP
+```
+
+---
+
+### Step 4 — Start the daemon
+
+```bash
+cd daemon
+CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-... ./ohmyclawd-daemon
+```
+
+Verify it's working:
+
+```bash
+curl http://localhost:8787/usage
+# expect: {"s":22,"sr":173,"w":18,...,"ok":true}
+
+curl http://localhost:8787/healthz
+# expect: ok
+```
+
+---
+
+### Step 5 — Autostart with launchd
+
+To run the daemon automatically on login:
+
+```bash
+cd daemon
+./install.sh
+```
+
+This builds the binary, installs it to `/usr/local/bin`, and registers a launchd agent. The daemon starts on login and restarts if it crashes.
+
+Check logs:
+
+```bash
+tail -f /tmp/ohmyclawd-daemon.log
+```
+
+To stop/restart:
+
+```bash
+launchctl unload ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
+launchctl load ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
+```
+
+> **Note:** `install.sh` builds from source — requires Go installed (`brew install go`). Alternatively, set `CLAUDE_CODE_OAUTH_TOKEN` manually in `/usr/local/bin` or the plist file.
+
+---
+
+### Step 6 — Configure the CYD
+
+On first boot, the CYD creates a WiFi access point:
+
+1. Connect to **`OhMyClawd`** on your Mac or phone
+2. A captive portal opens (or browse to `192.168.4.1`)
+3. Click **Configure WiFi**
+4. Enter your **WiFi SSID** and **password**
+5. Set **Daemon URL** to your Mac's static IP — **do not use `.local`**:
+   ```
+   http://192.168.1.200:8787
+   ```
+6. Set your **Timezone** (e.g. `MYT-8` for Malaysia, see [POSIX TZ format](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html))
+7. Save — the CYD reboots and connects
+
+Settings persist across reboots. Hold touch for 5 seconds to reset and reconfigure.
+
+---
+
+### Step 7 — Done!
+
+The CYD shows your Claude Code session and weekly usage. Tap to switch between sprite and clock modes.
+
+---
+
+## Linux Setup
+
+**One-liner:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/amirahnasihah/ohmyclawd-mac/main/install.sh | sudo bash
 ```
 
 This downloads the latest binary, installs to `/usr/local/bin`, and sets up a systemd service.
 
-**Other platforms** — download from [Releases](https://github.com/opariffazman/ohmyclawd/releases):
-
-| Platform | Binary |
-|----------|--------|
-| Linux x64 | `ohmyclawd-daemon-linux-amd64` |
-| macOS x64 | `ohmyclawd-daemon-darwin-amd64` |
-| macOS ARM | `ohmyclawd-daemon-darwin-arm64` |
-| Windows x64 | `ohmyclawd-daemon-windows-amd64.exe` |
-
-```bash
-# Linux/macOS
-chmod +x ohmyclawd-daemon-*
-./ohmyclawd-daemon-linux-amd64
-
-# Windows
-ohmyclawd-daemon-windows-amd64.exe
-```
-
-### 2. Flash the firmware
-
-Requires [PlatformIO](https://platformio.org/).
-
-```bash
-git clone https://github.com/opariffazman/ohmyclawd.git
-cd ohmyclawd
-pio run -e cyd -t upload
-```
-
-Or download `ohmyclawd-firmware.bin` from [Releases](https://github.com/opariffazman/ohmyclawd/releases) and flash with esptool:
-
-```bash
-esptool.py write_flash 0x10000 ohmyclawd-firmware.bin
-```
-
-### 3. Configure the CYD
-
-On first boot, the CYD creates a WiFi access point:
-
-1. Connect to **`OhMyClawd`** on your phone/laptop
-2. A captive portal opens (or browse to `192.168.4.1`)
-3. Enter your **WiFi SSID** and **password**
-4. Set the **Daemon URL** (default: `http://ohmyclawd.local:8787`)
-5. Set your **Timezone** (default: `UTC-8`, see [POSIX TZ format](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html))
-6. Save — the CYD reboots and connects
-
-Settings persist across reboots. Hold touch for 5 seconds to reset and reconfigure.
-
-### 4. Done!
-
-The CYD shows your Claude Code usage. Tap to switch between sprite and clock modes.
+---
 
 ## Sprite States
 
@@ -112,21 +203,33 @@ The animated sprite changes based on your Claude Code status (requires Claude Co
 | Moderate usage | work-coding, dance-djmix | Session usage 25–49% |
 | Light usage | dance-bounce, dance-sway, bounce-dj, sway-dj, idle-blink | Session usage < 25% |
 
+---
+
 ## Updating
 
 **Firmware:** updates itself via OTA — on boot it checks GitHub for a newer release and prompts to update.
 
-**Daemon:** re-run the install script:
+**Daemon (macOS):** re-run the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
+cd daemon && ./install.sh
 ```
+
+**Daemon (Linux):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/amirahnasihah/ohmyclawd-mac/main/install.sh | sudo bash
+```
+
+---
 
 ## Daemon
 
 The daemon runs on your machine (where Claude Code runs), polls the Anthropic API for rate-limit headers, and serves usage data over HTTP.
 
-See [daemon/README.md](daemon/README.md) for full setup instructions, environment variables, and platform downloads.
+See [daemon/README.md](daemon/README.md) for full environment variables, endpoints, and fake mode.
+
+---
 
 ## Project Structure
 
@@ -141,17 +244,24 @@ See [daemon/README.md](daemon/README.md) for full setup instructions, environmen
 │   ├── usage.go          # Usage struct (JSON wire format)
 │   ├── creds.go          # Claude OAuth credential loader
 │   ├── fake.go           # Fake mode for testing
-│   ├── install.sh        # Install script
-│   └── systemd/          # systemd service file
+│   ├── install.sh        # Install script (macOS + Linux)
+│   ├── systemd/          # systemd service file (Linux)
+│   └── launchd/          # launchd plist template (macOS)
 ├── .github/workflows/    # CI: test + release binary
 └── src/
     ├── main.cpp          # Firmware source
     └── sprite_frames.h   # Generated animation frame data (13 presets)
 ```
 
+---
+
 ## How It Works
 
-The daemon reads your Claude Code OAuth credentials from `~/.claude/.credentials.json` (created automatically when you authenticate Claude Code). It uses the access token to make lightweight requests to the Anthropic API and reads the rate-limit response headers to determine your current session and weekly usage percentages. No messages are sent or read — it only inspects HTTP headers.
+The daemon authenticates with the Anthropic API using your Claude OAuth token. On macOS, generate this token via `claude setup-token`. On Linux, the daemon reads it directly from `~/.claude/.credentials.json`.
+
+It makes lightweight requests to the Anthropic API and reads the rate-limit response headers to determine your current session and weekly usage percentages. No messages are sent or read — it only inspects HTTP headers.
+
+---
 
 ## Credits
 
@@ -159,7 +269,7 @@ The daemon reads your Claude Code OAuth credentials from `~/.claude/.credentials
 
 ## Disclaimer
 
-This project is unofficial and not affiliated with Anthropic. It relies on undocumented rate-limit headers from the Anthropic API which may change without notice. The daemon requires read-only access to your local Claude Code credentials file — it does not transmit, store, or expose your tokens over the network. Use at your own risk.
+This project is unofficial and not affiliated with Anthropic. It relies on undocumented rate-limit headers from the Anthropic API which may change without notice. The daemon requires read-only access to your Claude Code credentials — it does not transmit, store, or expose your tokens over the network. Use at your own risk.
 
 ## License
 

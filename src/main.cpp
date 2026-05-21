@@ -453,8 +453,9 @@ void runSystem() {
   drawRow("UP", up);
 
   drawRow("FW", "v" VERSION);
-  drawRow("BY", "opariffazman");
-  drawRow("GH", "opariffazman/ohmyclawd");
+  drawRow("BY", "amirahnasihah");
+  drawRow("GH", "ohmyclawd-mac");
+  drawRow("OG", "opariffazman");
   tft.setTextDatum(TL_DATUM);
 }
 
@@ -467,7 +468,7 @@ void checkOTA() {
   client.setInsecure(); // GitHub API, skip cert verification
   HTTPClient http;
   http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-  http.begin(client, "https://api.github.com/repos/opariffazman/ohmyclawd/releases/latest");
+  http.begin(client, "https://api.github.com/repos/amirahnasihah/ohmyclawd-mac/releases/latest");
   http.addHeader("User-Agent", "OhMyClawd-ESP32");
   int code = http.GET();
   if (code != 200) { http.end(); return; }

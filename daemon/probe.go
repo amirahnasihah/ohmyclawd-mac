@@ -21,10 +21,11 @@ const (
 )
 
 type Prober struct {
-	URL   string
-	Token string
-	HTTP  *http.Client
-	Now   func() time.Time // injectable for tests; nil -> time.Now
+	URL    string
+	Token  string
+	APIKey string // if set, use x-api-key header instead of Bearer
+	HTTP   *http.Client
+	Now    func() time.Time // injectable for tests; nil -> time.Now
 }
 
 var (
@@ -47,7 +48,11 @@ func (p *Prober) Run() (*Usage, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+p.Token)
+	if p.APIKey != "" {
+		req.Header.Set("x-api-key", p.APIKey)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+p.Token)
+	}
 	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("Content-Type", "application/json")
 
