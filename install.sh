@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # OhMyClawd daemon installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | sudo bash
-# macOS: curl -fsSL https://raw.githubusercontent.com/opariffazman/ohmyclawd/master/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/amirahnasihah/ohmyclawd-mac/main/install.sh | sudo bash
+# macOS: curl -fsSL https://raw.githubusercontent.com/amirahnasihah/ohmyclawd-mac/main/install.sh | bash
 
-REPO="opariffazman/ohmyclawd"
+REPO="amirahnasihah/ohmyclawd-mac"
 INSTALL_DIR="/usr/local/bin"
 SERVICE_NAME="ohmyclawd-daemon"
 
