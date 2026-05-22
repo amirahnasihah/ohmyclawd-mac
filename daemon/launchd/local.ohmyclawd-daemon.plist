@@ -16,6 +16,8 @@
     <string>60s</string>
     <key>HOME</key>
     <string>__HOME__</string>
+    <key>CLAUDE_CODE_OAUTH_TOKEN</key>
+    <string>__OAUTH_TOKEN__</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>

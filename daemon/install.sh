@@ -35,8 +35,26 @@ if [[ "${OS}" == "Darwin" ]]; then
   PLIST_FILE="${PLIST_DIR}/local.${SERVICE_NAME}.plist"
   mkdir -p "${PLIST_DIR}"
 
+  # Get OAuth token
+  OAUTH_TOKEN="${CLAUDE_CODE_OAUTH_TOKEN:-}"
+  if [[ -z "${OAUTH_TOKEN}" ]]; then
+    echo ""
+    echo "==> Claude OAuth token required."
+    echo "    Generate one with: claude setup-token"
+    echo "    Or set CLAUDE_CODE_OAUTH_TOKEN env var before running this script."
+    echo ""
+    read -r -s -p "Paste token (hidden): " OAUTH_TOKEN
+    echo ""
+  fi
+  if [[ -z "${OAUTH_TOKEN}" ]]; then
+    echo "error: token cannot be empty" >&2
+    exit 1
+  fi
+
   echo "==> installing launchd agent..."
-  sed "s|__HOME__|${HOME}|g" launchd/local.ohmyclawd-daemon.plist > "${PLIST_FILE}"
+  sed -e "s|__HOME__|${HOME}|g" \
+      -e "s|__OAUTH_TOKEN__|${OAUTH_TOKEN}|g" \
+      launchd/local.ohmyclawd-daemon.plist > "${PLIST_FILE}"
 
   launchctl unload "${PLIST_FILE}" 2>/dev/null || true
   launchctl load "${PLIST_FILE}"
