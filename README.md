@@ -142,17 +142,23 @@ The script will prompt you to paste your OAuth token (from Step 1). It then:
 
 The daemon starts automatically on every login. No manual steps needed after this.
 
-Check logs:
+Useful commands:
 
 ```bash
+# check status (exit code 0 = running, anything else = crashed)
+launchctl list | grep ohmyclawd
+
+# check logs
 tail -f /tmp/ohmyclawd-daemon.log
-```
 
-To stop/restart:
-
-```bash
+# stop
 launchctl unload ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
+
+# start
 launchctl load ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
+
+# restart
+launchctl unload ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist && launchctl load ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
 ```
 
 > **Note:** `install.sh` builds from source — requires Go installed (`brew install go`).
