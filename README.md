@@ -132,10 +132,15 @@ To run the daemon automatically on login:
 
 ```bash
 cd daemon
-./install.sh
+./install.sh   # no sudo needed on macOS
 ```
 
-This builds the binary, installs it to `/usr/local/bin`, and registers a launchd agent. The daemon starts on login and restarts if it crashes.
+The script will prompt you to paste your OAuth token (from Step 1). It then:
+- Builds the binary and installs to `~/.local/bin/ohmyclawd-daemon`
+- Registers a launchd agent at `~/Library/LaunchAgents/local.ohmyclawd-daemon.plist`
+- Starts the daemon immediately
+
+The daemon starts automatically on every login. No manual steps needed after this.
 
 Check logs:
 
@@ -150,7 +155,7 @@ launchctl unload ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
 launchctl load ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist
 ```
 
-> **Note:** `install.sh` builds from source — requires Go installed (`brew install go`). Alternatively, set `CLAUDE_CODE_OAUTH_TOKEN` manually in `/usr/local/bin` or the plist file.
+> **Note:** `install.sh` builds from source — requires Go installed (`brew install go`).
 
 ---
 

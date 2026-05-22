@@ -6,7 +6,7 @@
   <string>local.ohmyclawd-daemon</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/local/bin/ohmyclawd-daemon</string>
+    <string>__INSTALL_DIR__/ohmyclawd-daemon</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>

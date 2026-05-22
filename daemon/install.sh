@@ -2,8 +2,15 @@
 set -euo pipefail
 
 OS="$(uname -s)"
-INSTALL_DIR="/usr/local/bin"
 SERVICE_NAME="ohmyclawd-daemon"
+
+# macOS installs to ~/.local/bin (no sudo); Linux installs to /usr/local/bin (sudo required)
+if [[ "${OS}" == "Darwin" ]]; then
+  INSTALL_DIR="${HOME}/.local/bin"
+  mkdir -p "${INSTALL_DIR}"
+else
+  INSTALL_DIR="/usr/local/bin"
+fi
 
 # Linux requires root; macOS runs as current user
 if [[ "${OS}" == "Linux" ]]; then
@@ -54,6 +61,7 @@ if [[ "${OS}" == "Darwin" ]]; then
   echo "==> installing launchd agent..."
   sed -e "s|__HOME__|${HOME}|g" \
       -e "s|__OAUTH_TOKEN__|${OAUTH_TOKEN}|g" \
+      -e "s|__INSTALL_DIR__|${INSTALL_DIR}|g" \
       launchd/local.ohmyclawd-daemon.plist > "${PLIST_FILE}"
 
   launchctl unload "${PLIST_FILE}" 2>/dev/null || true

@@ -6,6 +6,16 @@ This fork ([amirahnasihah/ohmyclawd-mac](https://github.com/amirahnasihah/ohmycl
 
 ---
 
+## [0.5.2] — 2026-05-22
+
+### macOS Support
+
+- **launchd install no sudo** — daemon now installs to `~/.local/bin` instead of `/usr/local/bin` on macOS, so `./install.sh` runs without `sudo`.
+- **OAuth token prompt** — `install.sh` now prompts for the OAuth token interactively during install instead of requiring it to be pre-set in the environment.
+- **Auto binary path in plist** — launchd plist uses `__INSTALL_DIR__` placeholder, resolved to the correct path at install time.
+
+---
+
 ## [0.5.1] — 2026-05-22
 
 ### macOS Support
