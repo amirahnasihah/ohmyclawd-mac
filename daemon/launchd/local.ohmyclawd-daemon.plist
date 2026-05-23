@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.ohmyclawd-daemon</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__INSTALL_DIR__/ohmyclawd-daemon</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>OHMYCLAWD_LISTEN</key>
+    <string>:8787</string>
+    <key>OHMYCLAWD_PROBE_INTERVAL</key>
+    <string>60s</string>
+    <key>HOME</key>
+    <string>__HOME__</string>
+    <key>CLAUDE_CODE_OAUTH_TOKEN</key>
+    <string>__OAUTH_TOKEN__</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/tmp/ohmyclawd-daemon.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/ohmyclawd-daemon.log</string>
+</dict>
+</plist>

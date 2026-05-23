@@ -34,15 +34,34 @@ func main() {
 		go runFake(ctx, state)
 		log.Printf("ohmyclawd-daemon listening on %s (fake mode)", listen)
 	} else {
-		creds, err := LoadCreds(credsPath)
-		if err != nil {
-			log.Fatalf("credentials: %v", err)
-		}
-		log.Printf("loaded OAuth token, expires unix-ms=%d", creds.ExpiresAt)
-		prober := &Prober{
-			URL:   anthropicURL,
-			Token: creds.AccessToken,
-			HTTP:  &http.Client{Timeout: 30 * time.Second},
+		apiKey := getenv("ANTHROPIC_API_KEY", "")
+		oauthToken := getenv("CLAUDE_CODE_OAUTH_TOKEN", "")
+		var prober *Prober
+		if apiKey != "" {
+			log.Printf("using ANTHROPIC_API_KEY")
+			prober = &Prober{
+				URL:    anthropicURL,
+				APIKey: apiKey,
+				HTTP:   &http.Client{Timeout: 30 * time.Second},
+			}
+		} else if oauthToken != "" {
+			log.Printf("using CLAUDE_CODE_OAUTH_TOKEN")
+			prober = &Prober{
+				URL:   anthropicURL,
+				Token: oauthToken,
+				HTTP:  &http.Client{Timeout: 30 * time.Second},
+			}
+		} else {
+			creds, err := LoadCreds(credsPath)
+			if err != nil {
+				log.Fatalf("credentials: %v (set ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN, or OHMYCLAWD_CREDS_PATH)", err)
+			}
+			log.Printf("loaded OAuth token, expires unix-ms=%d", creds.ExpiresAt)
+			prober = &Prober{
+				URL:   anthropicURL,
+				Token: creds.AccessToken,
+				HTTP:  &http.Client{Timeout: 30 * time.Second},
+			}
 		}
 		cfg := LoopConfig{
 			Base:        probeInterval,
