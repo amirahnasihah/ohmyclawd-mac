@@ -165,22 +165,49 @@ launchctl unload ~/Library/LaunchAgents/local.ohmyclawd-daemon.plist && launchct
 
 ---
 
+### Step 5b — (Optional) Deploy daemon to Fly.io
+
+Skip this if you prefer running the daemon locally. Fly.io gives the ESP32 a stable cloud URL — no more static IP issues.
+
+**Prerequisites:** [flyctl](https://fly.io/docs/hands-on/install-flyctl/) installed (`brew install flyctl`) and logged in (`fly auth login`).
+
+```bash
+cd daemon
+fly apps create ohmyclawd-daemon   # pick any unique name
+fly secrets set CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-... --app ohmyclawd-daemon
+fly deploy --ha=false
+```
+
+Verify:
+
+```bash
+curl https://ohmyclawd-daemon.fly.dev/usage
+# expect: {"s":22,"sr":173,"w":18,...,"ok":true}
+```
+
+Use `https://ohmyclawd-daemon.fly.dev` as the daemon URL in Step 6 instead of a local IP.
+
+> **Note:** Fly.io free tier may spin down idle machines — the ESP32's first request after idle may take ~2s to wake.
+
+---
+
 ### Step 6 — Configure the CYD
 
 On first boot, the CYD creates a WiFi access point:
 
-1. Connect to **`OhMyClawd`** on your Mac or phone
-2. A captive portal opens (or browse to `192.168.4.1`)
+1. Connect to **`OhMyClawd`** on your Mac or **phone** (phone more reliable for captive portal)
+2. A captive portal opens (or browse to `http://192.168.4.1`)
 3. Click **Configure WiFi**
 4. Enter your **WiFi SSID** and **password**
-5. Set **Daemon URL** to your Mac's static IP — **do not use `.local`**:
-   ```
-   http://192.168.1.200:8787
-   ```
+5. Set **Daemon URL** — choose one:
+   - **Cloud (recommended):** `https://ohmyclawd-daemon.fly.dev`
+   - **Local:** `http://192.168.1.200:8787` (requires static IP on Mac)
 6. Set your **Timezone** (e.g. `MYT-8` for Malaysia, see [POSIX TZ format](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html))
 7. Save — the CYD reboots and connects
 
 Settings persist across reboots. Hold touch for 5 seconds to reset and reconfigure.
+
+> **Tip:** If captive portal doesn't auto-pop on Mac, connect from your phone instead and open `http://192.168.4.1` manually in the browser.
 
 ---
 
