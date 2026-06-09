@@ -6,6 +6,17 @@ This fork ([amirahnasihah/ohmyclawd-mac](https://github.com/amirahnasihah/ohmycl
 
 ---
 
+## [0.5.3] — 2026-06-09
+
+### Cloud Deployment
+
+- **Fly.io support** — daemon can now be deployed to Fly.io (`fly deploy`). No more static IP issues — ESP32 points to a stable `https://ohmyclawd-daemon.fly.dev` URL.
+- **Dockerfile** — multi-stage build (`golang:latest` → `alpine`), `CGO_ENABLED=0` for fully static binary, image size ~6MB.
+- **fly.toml** — pre-configured for `sin` (Singapore) region, 256MB shared CPU, auto-stop when idle.
+- **ESP32 daemon URL** — update captive portal to `https://ohmyclawd-daemon.fly.dev` after cloud deploy. No more local IP dependency.
+
+---
+
 ## [0.5.2] — 2026-05-22
 
 ### macOS Support
@@ -54,3 +65,5 @@ This fork ([amirahnasihah/ohmyclawd-mac](https://github.com/amirahnasihah/ohmycl
 | Default branch | `master` | `main` |
 | GitHub Actions versions | outdated (v6–v8) | current stable (v4–v5) |
 | README | Linux-focused quick start | macOS A-Z setup guide |
+| Cloud deploy | not supported | Fly.io (`fly deploy`) with Dockerfile + fly.toml |
+| Daemon URL | local IP only | local IP or `https://<app>.fly.dev` |
