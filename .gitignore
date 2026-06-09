@@ -3,3 +3,4 @@
 .cache
 daemon/daemon
 daemon/ohmyclawd-daemon
+.venv/
