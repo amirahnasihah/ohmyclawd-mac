@@ -2,3 +2,4 @@
 .vscode
 .cache
 daemon/daemon
+daemon/ohmyclawd-daemon
