@@ -54,13 +54,15 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: daemon
     steps:
       - uses: actions/checkout@v4
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # master
 
       - name: fly deploy
         run: flyctl deploy --remote-only --ha=false
