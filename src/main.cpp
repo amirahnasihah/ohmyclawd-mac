@@ -333,7 +333,13 @@ void runSprite() {
 
 void fetchUsage() {
   HTTPClient http;
-  http.begin(daemonUrl + "/usage");
+  WiFiClientSecure secureClient;
+  if (daemonUrl.startsWith("https://")) {
+    secureClient.setInsecure();
+    http.begin(secureClient, daemonUrl + "/usage");
+  } else {
+    http.begin(daemonUrl + "/usage");
+  }
   if (http.GET() == 200) {
     JsonDocument doc; deserializeJson(doc, http.getString());
     usageSession = doc["s"] | 0;
