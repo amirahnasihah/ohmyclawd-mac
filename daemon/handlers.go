@@ -21,15 +21,16 @@ type Handler struct {
 	state   *State
 	metrics *Metrics
 	tmux    *TmuxWatcher
+	prober  ProbeRunner
 	now     func() time.Time
 	mux     *http.ServeMux
 }
 
-func NewHandler(s *State, m *Metrics, tw *TmuxWatcher, now func() time.Time) *Handler {
+func NewHandler(s *State, m *Metrics, tw *TmuxWatcher, p ProbeRunner, now func() time.Time) *Handler {
 	if now == nil {
 		now = time.Now
 	}
-	h := &Handler{state: s, metrics: m, tmux: tw, now: now, mux: http.NewServeMux()}
+	h := &Handler{state: s, metrics: m, tmux: tw, prober: p, now: now, mux: http.NewServeMux()}
 	h.mux.HandleFunc("/usage", h.usage)
 	h.mux.HandleFunc("/healthz", h.healthz)
 	h.mux.HandleFunc("/metrics", h.prom)
@@ -40,6 +41,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { h.mux.Serv
 
 func (h *Handler) usage(w http.ResponseWriter, r *http.Request) {
 	u, _ := h.state.Load()
+	if u.Ts == 0 && h.prober != nil {
+		if fresh, err := h.prober.Run(); err == nil {
+			h.state.Store(fresh)
+			u = fresh
+		}
+	}
 	if h.tmux != nil {
 		u.CS = h.tmux.Sessions()
 		u.CW = h.tmux.Waiting()

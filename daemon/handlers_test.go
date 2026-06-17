@@ -12,7 +12,7 @@ func newTestHandler(t *testing.T) (*Handler, *State, *Metrics) {
 	t.Helper()
 	s := NewState()
 	m := NewMetrics()
-	return NewHandler(s, m, nil, func() time.Time { return time.Unix(1747353660, 0) }), s, m
+	return NewHandler(s, m, nil, nil, func() time.Time { return time.Unix(1747353660, 0) }), s, m
 }
 
 func TestUsageHandler200(t *testing.T) {

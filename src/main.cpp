@@ -47,6 +47,7 @@ int usageSR = 0;
 int usageWR = 0;
 int claudeWaiting = 0;
 unsigned long lastUsageFetch = 0;
+bool usageFetchOk = false;
 
 String daemonUrl;
 
@@ -215,7 +216,8 @@ void loop() {
     delay(200);
   }
   if (isAutoCycle && (millis() - modeTimer > interval)) nextMode();
-  if (millis() - lastUsageFetch > 30000 || lastUsageFetch == 0) { fetchUsage(); lastUsageFetch = millis(); }
+  unsigned long fetchInterval = usageFetchOk ? 30000 : 5000;
+  if (millis() - lastUsageFetch > fetchInterval || lastUsageFetch == 0) { fetchUsage(); lastUsageFetch = millis(); }
 
   switch (currentMode) {
     case 0: runSprite(); break;
@@ -336,18 +338,21 @@ void fetchUsage() {
   WiFiClientSecure secureClient;
   if (daemonUrl.startsWith("https://")) {
     secureClient.setInsecure();
+    secureClient.setTimeout(5000);
     http.begin(secureClient, daemonUrl + "/usage");
   } else {
     http.begin(daemonUrl + "/usage");
   }
-  if (http.GET() == 200) {
+  http.setTimeout(5000);
+  int code = http.GET();
+  if (code == 200) {
     JsonDocument doc; deserializeJson(doc, http.getString());
     usageSession = doc["s"] | 0;
     usageWeekly = doc["w"] | 0;
     usageSR = doc["sr"] | 0;
     usageWR = doc["wr"] | 0;
     claudeWaiting = doc["cw"] | 0;
-    // Update sprite based on new status
+    usageFetchOk = true;
     if (currentMode == 0 && dynamicSprite) {
       uint8_t newAnim;
       static const uint8_t waitP[] = {3, 4};
@@ -362,6 +367,8 @@ void fetchUsage() {
       else newAnim = lightP[random(5)];
       if (newAnim != spriteAnim) { spriteAnim = newAnim; spriteFrame = 0; }
     }
+  } else {
+    usageFetchOk = false;
   }
   http.end();
 }

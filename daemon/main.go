@@ -23,13 +23,13 @@ func main() {
 	state := NewState()
 	metrics := NewMetrics()
 	tmux := NewTmuxWatcher()
-	handler := NewHandler(state, metrics, tmux, time.Now)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go tmux.Run(ctx)
 
+	var probeRunner ProbeRunner
 	if *fakeMode {
 		go runFake(ctx, state)
 		log.Printf("ohmyclawd-daemon listening on %s (fake mode)", listen)
@@ -63,6 +63,7 @@ func main() {
 				HTTP:  &http.Client{Timeout: 30 * time.Second},
 			}
 		}
+		probeRunner = prober
 		cfg := LoopConfig{
 			Base:        probeInterval,
 			RateLimited: 5 * time.Minute,
@@ -72,6 +73,8 @@ func main() {
 		go RunLoop(ctx, prober, state, metrics, cfg)
 		log.Printf("ohmyclawd-daemon listening on %s (probing %s every %s)", listen, anthropicURL, probeInterval)
 	}
+
+	handler := NewHandler(state, metrics, tmux, probeRunner, time.Now)
 
 	srv := &http.Server{Addr: listen, Handler: handler, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
