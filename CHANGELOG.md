@@ -6,6 +6,18 @@ This fork ([amirahnasihah/ohmyclawd-mac](https://github.com/amirahnasihah/ohmycl
 
 ---
 
+## [0.7.2] — 2026-06-17
+
+### Reliability
+
+- **Always-on Fly.io daemon** — `min_machines_running = 1`, `auto_stop = off`. No more cold start delays when ESP32 reconnects.
+- **On-demand probe** — daemon triggers an immediate Anthropic API probe on first `/usage` hit if state is empty, so ESP32 gets real data within seconds of a fresh deploy or restart.
+- **ESP32 HTTP timeout** — 5-second timeout on usage fetch prevents hanging on network blips.
+- **Fast retry on failure** — ESP32 retries every 5 seconds when fetch fails (was 30s). Normal 30-second poll on success.
+- **Pinned ESP32 platform** — locked `espressif32@~6.9.0` to fix WiFiManager build breakage on newer framework versions.
+
+---
+
 ## [0.5.3] — 2026-06-09
 
 ### Cloud Deployment
