@@ -187,7 +187,7 @@ curl https://ohmyclawd-daemon.fly.dev/usage
 
 Use `https://ohmyclawd-daemon.fly.dev` as the daemon URL in Step 6 instead of a local IP.
 
-> **Note:** Fly.io free tier may spin down idle machines — the ESP32's first request after idle may take ~2s to wake.
+> **Note:** The daemon is configured to run 24/7 (`min_machines_running = 1`). This stays within Fly.io's free tier (3 shared VMs).
 
 ---
 
@@ -205,7 +205,14 @@ On first boot, the CYD creates a WiFi access point:
 6. Set your **Timezone** (e.g. `MYT-8` for Malaysia, see [POSIX TZ format](https://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html))
 7. Save — the CYD reboots and connects
 
-Settings persist across reboots. Hold touch for 5 seconds to reset and reconfigure.
+Settings persist across reboots and firmware reflashes.
+
+**To reset all settings** (WiFi, daemon URL, timezone): hold touch for 5 seconds. The ESP32 will reboot into AP mode and you'll need to reconfigure:
+
+1. Connect phone/laptop to **`OhMyClawd`** AP
+2. Open `192.168.4.1`
+3. Enter WiFi credentials, Daemon URL (`https://ohmyclawd-daemon.fly.dev`), and Timezone (`MYT-8`)
+4. Save → ESP32 reboots and auto-connects
 
 > **Tip:** If captive portal doesn't auto-pop on Mac, connect from your phone instead and open `http://192.168.4.1` manually in the browser.
 
