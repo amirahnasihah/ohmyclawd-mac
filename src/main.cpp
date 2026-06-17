@@ -340,7 +340,9 @@ void fetchUsage() {
   } else {
     http.begin(daemonUrl + "/usage");
   }
-  if (http.GET() == 200) {
+  int httpCode = http.GET();
+  Serial.printf("[fetchUsage] GET %s -> %d\n", (daemonUrl + "/usage").c_str(), httpCode);
+  if (httpCode == 200) {
     JsonDocument doc; deserializeJson(doc, http.getString());
     usageSession = doc["s"] | 0;
     usageWeekly = doc["w"] | 0;
